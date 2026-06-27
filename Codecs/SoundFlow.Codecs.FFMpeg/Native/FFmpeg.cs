@@ -2,6 +2,7 @@
 using SoundFlow.Enums;
 using System.Runtime.InteropServices;
 using SoundFlow.Codecs.FFMpeg.Enums;
+using SoundFlow.Structs;
 
 namespace SoundFlow.Codecs.FFMpeg.Native;
 
@@ -185,7 +186,7 @@ internal static partial class FFmpeg
 
     [LibraryImport(LibraryName, EntryPoint = "sf_decoder_init")]
     public static partial FFmpegResult InitializeDecoder(SafeDecoderHandle decoder, ReadCallback onRead, SeekCallback onSeek, IntPtr pUserData,
-        SampleFormat targetFormat, out SampleFormat outNativeFormat, out uint outChannels, out uint outSamplerate);
+        SampleFormat targetFormat, ChannelLayout targetLayout, int targetSampleRate, out SampleFormat outNativeFormat, out uint outChannels, out uint outSamplerate);
 
     [LibraryImport(LibraryName, EntryPoint = "sf_decoder_get_length_in_pcm_frames")]
     public static partial long GetLengthInPcmFrames(SafeDecoderHandle decoder);

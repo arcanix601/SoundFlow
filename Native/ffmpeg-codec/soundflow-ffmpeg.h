@@ -28,6 +28,15 @@ typedef enum {
 } SFSampleFormat;
 
 typedef enum {
+  SF_CHANNEL_LAYOUT_UNKNOWN = 0,
+  SF_CHANNEL_LAYOUT_MONO = 1,
+  SF_CHANNEL_LAYOUT_STEREO = 2,
+  SF_CHANNEL_LAYOUT_QUAD = 3,
+  SF_CHANNEL_LAYOUT_SURROUND_51 = 4,
+  SF_CHANNEL_LAYOUT_SURROUND_71 = 5
+} SFChannelLayout;
+
+typedef enum {
     SF_RESULT_SUCCESS = 0,
 
     // General Errors
@@ -46,6 +55,7 @@ typedef enum {
     SF_RESULT_DECODER_ERROR_PACKET_FRAME_ALLOC = -18,
     SF_RESULT_DECODER_ERROR_SEEK_FAILED = -19,
     SF_RESULT_DECODER_ERROR_DECODING_FAILED = -20,
+    SF_RESULT_DECODER_ERROR_INVALID_TARGET_LAYOUT = -21,
 
     // Encoder-specific Errors
     SF_RESULT_ENCODER_ERROR_FORMAT_NOT_FOUND = -30,
@@ -77,6 +87,7 @@ SF_FFMPEG_API SF_Result sf_decoder_init(
     SF_Decoder* decoder, sf_read_callback onRead, sf_seek_callback onSeek,
     void* pUserData,
     SFSampleFormat target_format,       // The target output format
+    SFChannelLayout target_layout, int32_t target_samplerate,
     SFSampleFormat* out_native_format,  // The original format of the file
     uint32_t* out_channels, uint32_t* out_samplerate);
 SF_FFMPEG_API int64_t sf_decoder_get_length_in_pcm_frames(SF_Decoder* decoder);

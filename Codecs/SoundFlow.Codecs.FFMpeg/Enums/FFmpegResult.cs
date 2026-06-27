@@ -80,6 +80,11 @@ public enum FFmpegResult
     /// </summary>
     DecoderErrorDecodingFailed = -20,
 
+    /// <summary>
+    /// The requested target channel layout for decoding is invalid or not supported.
+    /// </summary>
+    DecoderErrorInvalidTargetLayout = -21,
+    
     // Encoder-specific Errors
     
     /// <summary>

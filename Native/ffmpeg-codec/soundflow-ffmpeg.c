@@ -78,6 +78,18 @@ static SFSampleFormat from_ffmpeg_sample_format(enum AVSampleFormat format) {
     }
 }
 
+static AVChannelLayout to_ffmpeg_channel_layout(SFChannelLayout layout) {
+    switch (layout) {
+        case SF_CHANNEL_LAYOUT_MONO: return (AVChannelLayout)AV_CHANNEL_LAYOUT_MONO;
+        case SF_CHANNEL_LAYOUT_STEREO: return (AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
+        case SF_CHANNEL_LAYOUT_QUAD: return (AVChannelLayout)AV_CHANNEL_LAYOUT_QUAD;
+        case SF_CHANNEL_LAYOUT_SURROUND_51: return (AVChannelLayout)AV_CHANNEL_LAYOUT_5POINT1;
+        case SF_CHANNEL_LAYOUT_SURROUND_71: return (AVChannelLayout)AV_CHANNEL_LAYOUT_7POINT1;
+    }
+    // Unknown layouts have an unspecified channel order
+    return (AVChannelLayout){ AV_CHANNEL_ORDER_UNSPEC, 0, 0, NULL };
+}
+
 // I/O Callbacks
 
 static int read_packet_callback(void* opaque, uint8_t* buf, int buf_size) {
@@ -116,8 +128,8 @@ SF_FFMPEG_API SF_Decoder* sf_decoder_create() {
 }
 
 SF_FFMPEG_API SF_Result sf_decoder_init(SF_Decoder* decoder, sf_read_callback onRead, sf_seek_callback onSeek, void* pUserData,
-                                        SFSampleFormat target_format, SFSampleFormat* out_native_format,
-                                        uint32_t* out_channels, uint32_t* out_samplerate) {
+                                        SFSampleFormat target_format, SFChannelLayout target_layout, int32_t target_samplerate,
+                                        SFSampleFormat* out_native_format, uint32_t* out_channels, uint32_t* out_samplerate) {
     if (!decoder) return SF_RESULT_ERROR_INVALID_ARGS;
 
     // Set FFmpeg to only log errors
@@ -173,11 +185,15 @@ SF_FFMPEG_API SF_Result sf_decoder_init(SF_Decoder* decoder, sf_read_callback on
     if (target_av_format == AV_SAMPLE_FMT_NONE) return SF_RESULT_DECODER_ERROR_INVALID_TARGET_FORMAT;
 
     decoder->target_bytes_per_sample = av_get_bytes_per_sample(target_av_format);
-    decoder->target_channels = decoder->codec_ctx->ch_layout.nb_channels;
+
+    AVChannelLayout target_av_layout = to_ffmpeg_channel_layout(target_layout);
+    if (!av_channel_layout_check(&target_av_layout)) return SF_RESULT_DECODER_ERROR_INVALID_TARGET_LAYOUT;
+
+    decoder->target_channels = target_av_layout.nb_channels;
 
     // Setup resampler to convert from native format to the requested target format
     swr_alloc_set_opts2(&decoder->swr_ctx,
-                        &decoder->codec_ctx->ch_layout, target_av_format, decoder->codec_ctx->sample_rate,
+                        &target_av_layout, target_av_format, target_samplerate,
                         &decoder->codec_ctx->ch_layout, decoder->codec_ctx->sample_fmt, decoder->codec_ctx->sample_rate,
                         0, NULL);
     if (!decoder->swr_ctx || swr_init(decoder->swr_ctx) < 0) return SF_RESULT_DECODER_ERROR_RESAMPLER_INIT_FAILED;

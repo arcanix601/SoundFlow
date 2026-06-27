@@ -36,7 +36,7 @@ internal sealed class FFmpegDecoder : ISoundDecoder
             throw new InvalidOperationException("Failed to create FFmpeg decoder handle.");
 
         var result = FFmpeg.InitializeDecoder(_handle, _readCallback, _seekCallback, IntPtr.Zero,
-            targetFormat.Format, out var nativeFormat, out var channels, out var sampleRate);
+            targetFormat.Format, targetFormat.Layout, targetFormat.SampleRate, out var nativeFormat, out var channels, out var sampleRate);
 
         if (result != FFmpegResult.Success)
         {
@@ -46,9 +46,9 @@ internal sealed class FFmpegDecoder : ISoundDecoder
             throw new FFmpegException(result, logMessage);
         }
 
-        SampleFormat = targetFormat.Format = nativeFormat;
-        Channels = targetFormat.Channels = (int)channels;
-        SampleRate = targetFormat.SampleRate = (int)sampleRate;
+        SampleFormat = targetFormat.Format;
+        Channels = targetFormat.Channels;
+        SampleRate = targetFormat.SampleRate;
         
         var lengthInFrames = FFmpeg.GetLengthInPcmFrames(_handle);
         if (lengthInFrames < 0)
